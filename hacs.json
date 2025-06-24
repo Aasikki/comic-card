@@ -1,0 +1,11 @@
+{
+  "name": "Comic Card",
+  "content_in_root": false,
+  "filename": "comic_card.js",
+  "render_readme": true,
+  "description": "A Home Assistant card for displaying comics from image entities.",
+  "domains": ["lovelace"],
+  "country": "FI",
+  "homeassistant": ">=2023.0.0",
+  "type": "js"
+}
