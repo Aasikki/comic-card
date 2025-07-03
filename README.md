@@ -2,3 +2,5 @@
 # Comic Card For Home Assistant
 
 A Home Assistant card for displaying comics from image entities.
+
+![image](https://github.com/user-attachments/assets/d82414cd-b84a-4200-87fd-342437bdb2e4)
