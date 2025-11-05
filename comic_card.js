@@ -542,6 +542,12 @@ class ComicCardEditor extends LitElement {
     // Deep-clone the schema to avoid ha-form internal caching/translation quirks
     // and ensure the explicit labels are used.
     const schemaClone = JSON.parse(JSON.stringify(schema));
+    // Add a changing token so ha-form treats this as a new schema each render
+    // (prevents internal caching that can show raw names instead of our labels).
+    schemaClone._uid = Date.now();
+    for (let i = 0; i < schemaClone.length; i++) {
+      schemaClone[i]._uid = `${schemaClone._uid}-${i}`;
+    }
 
     return html`
       <ha-form
