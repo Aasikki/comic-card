@@ -333,10 +333,10 @@ class ComicCard extends LitElement {
       /* === Utility: Comments for clarity, no functional changes === */
     `;
   }
+  // allow empty config (don't throw) so editor can open for new cards
   setConfig(config) {
-    if (!config.entity) throw new Error("Entity required");
     this.config = {
-      ...config,
+      ...(config || {})
     };
   }
   firstUpdated() {
@@ -371,8 +371,10 @@ class ComicCard extends LitElement {
     // treat both noscale and limit as "noscale" for container behavior (scrolling + shadows)
     const containerClass = `container ${align}${(fit === "noscale" || fit === "limit") ? " noscale" : ""}`;
 
-    // compute limit height (default 250)
-    const limitHeight = (fit === "limit") ? (Number(this.config.limit_height) || 250) : null;
+    // compute limit height (support both 'limit_height' and legacy/alternate 'height')
+    const rawLimit = (this.config && (this.config.limit_height ?? this.config.height));
+    const defaultLimit = 250;
+    const limitHeight = (fit === "limit") ? (Number(rawLimit) || defaultLimit) : null;
     const limitStyle = fit === "limit" ? `--limit-height: ${limitHeight}px;` : "";
 
     if (fit === "noscale" || fit === "limit") {
@@ -463,16 +465,18 @@ customElements.define("comic-card", ComicCard);
 class ComicCardEditor extends LitElement {
   static get properties() { return { hass: {}, config: {} }; }
 
-  // Ensure sensible defaults so the form shows selected defaults and height is prefilled
+  // Apply defaults only when absent so incoming config values aren't overwritten
   setConfig(config) {
+    const incoming = config || {};
     this.config = {
-      limit_height: 250,
-      fit: "limit",
-      align: "left",
-      ...(config || {})
+      fit: incoming.fit ?? "limit",
+      limit_height: incoming.limit_height ?? incoming.height ?? 250,
+      align: incoming.align ?? "left",
+      entity: incoming.entity ?? "",
+      ...incoming
     };
   }
-  
+
   set hass(hass) {
     this._hass = hass;
     this.requestUpdate();
@@ -490,8 +494,8 @@ class ComicCardEditor extends LitElement {
   render() {
     if (!this.config || !this.hass) return html``;
 
-    // Build schema dynamically so Height is only present when 'limit' is selected.
     const fitVal = this.config.fit || "limit";
+
     const schema = [
       {
         name: "entity",
