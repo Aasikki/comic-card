@@ -331,6 +331,51 @@ class ComicCard extends LitElement {
       mwc-textfield[disabled] { opacity: 0.6; }
 
       /* === Utility: Comments for clarity, no functional changes === */
+
+      /* Collapsible section styling (using native <details> to be robust) */
+      details.section {
+        background: var(--card-background-color, var(--paper-card-background-color, #fff));
+        border-radius: 6px;
+        margin: 10px 0;
+        padding: 6px 0;
+        box-shadow: none;
+      }
+      details.section[open] {
+        padding-bottom: 12px;
+      }
+      details.section summary {
+        list-style: none;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 10px 14px;
+        cursor: pointer;
+        font-weight: 600;
+        color: var(--primary-text-color);
+        border-radius: 6px;
+      }
+      details.section summary::-webkit-details-marker { display: none; }
+      /* simple caret */
+      details.section summary::before {
+        content: "▸";
+        display: inline-block;
+        transform-origin: center;
+        transition: transform .15s ease-in-out;
+        color: var(--secondary-text-color);
+      }
+      details.section[open] summary::before {
+        transform: rotate(90deg);
+      }
+      /* content inside section */
+      details.section .section-body {
+        padding: 6px 14px 0 14px;
+      }
+
+      /* ensure ha-form inside sections takes full width */
+      details.section ha-form {
+        width: 100%;
+        display: block;
+      }
     `;
   }
   setConfig(config) {
@@ -475,7 +520,8 @@ class ComicCardEditor extends LitElement {
     return this._hass;
   }
 
-  _onFormValueChanged(e) {
+  _onSectionChanged(e) {
+    if (!e?.detail?.value) return;
     const next = { ...this.config, ...e.detail.value };
     this.config = next;
     this.dispatchEvent(new CustomEvent("config-changed", { detail: { config: next } }));
@@ -484,10 +530,13 @@ class ComicCardEditor extends LitElement {
   render() {
     if (!this.config || !this.hass) return html``;
 
-    // Build schema dynamically so Height is only present when 'limit' is selected.
     const fitVal = this.config.fit || "limit";
-    const schema = [
+
+    const contentSchema = [
       { name: "entity", required: true, selector: { entity: { domain: ["image"] } } },
+    ];
+
+    const scalingSchema = [
       {
         name: "fit",
         selector: {
@@ -499,32 +548,62 @@ class ComicCardEditor extends LitElement {
             ]
           }
         }
-      },
+      }
     ];
-
     if (fitVal === "limit") {
-      schema.push({ name: "limit_height", selector: { number: { min: 1 } } });
+      scalingSchema.push({ name: "limit_height", selector: { number: { min: 1 } } });
     }
 
-    schema.push({
-      name: "align",
-      selector: {
-        select: {
-          options: [
-            { value: "left", label: "Left" },
-            { value: "center", label: "Center" }
-          ]
+    const positionSchema = [
+      {
+        name: "align",
+        selector: {
+          select: {
+            options: [
+              { value: "left", label: "Left" },
+              { value: "center", label: "Center" }
+            ]
+          }
         }
       }
-    });
+    ];
 
     return html`
-      <ha-form
-        .hass=${this.hass}
-        .schema=${schema}
-        .data=${this.config}
-        @value-changed=${this._onFormValueChanged}
-      ></ha-form>
+      <details class="section" open>
+        <summary>Content</summary>
+        <div class="section-body">
+          <ha-form
+            .hass=${this.hass}
+            .schema=${contentSchema}
+            .data=${this.config}
+            @value-changed=${this._onSectionChanged}
+          ></ha-form>
+        </div>
+      </details>
+
+      <details class="section" open>
+        <summary>Scaling</summary>
+        <div class="section-body">
+          <ha-form
+            .hass=${this.hass}
+            .schema=${scalingSchema}
+            .data=${this.config}
+            @value-changed=${this._onSectionChanged}
+          ></ha-form>
+        </div>
+      </details>
+
+      <details class="section" open>
+        <summary>Position</summary>
+        <div class="section-body">
+          <ha-form
+            .hass=${this.hass}
+            .schema=${positionSchema}
+            .data=${this.config}
+            @value-changed=${this._onSectionChanged}
+          ></ha-form>
+        </div>
+      </details>
     `;
   }
 }
