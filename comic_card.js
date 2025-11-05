@@ -332,43 +332,63 @@ class ComicCard extends LitElement {
 
       /* === Utility: Comments for clarity, no functional changes === */
 
-      /* Collapsible section styling (using native <details> to be robust) */
+      /* Collapsible section styling (using native <details> to be robust)
+         Reworked to more closely match Home Assistant editor sections:
+         - boxed header with subtle divider
+         - right-aligned chevron that rotates on open
+         - section body separated and padded
+      */
       details.section {
-        background: var(--card-background-color, var(--paper-card-background-color, #fff));
-        border-radius: 6px;
+        background: transparent;
+        border-radius: var(--ha-card-border-radius, 8px);
         margin: 10px 0;
-        padding: 6px 0;
-        box-shadow: none;
       }
-      details.section[open] {
-        padding-bottom: 12px;
-      }
+
+      /* Header that looks like HA editor section */
       details.section summary {
         list-style: none;
         display: flex;
         align-items: center;
         gap: 12px;
-        padding: 10px 14px;
+        padding: 10px 12px;
         cursor: pointer;
         font-weight: 600;
         color: var(--primary-text-color);
-        border-radius: 6px;
+        border-radius: var(--ha-card-border-radius, 8px);
+        background: var(--card-background-color, transparent);
+        border: 1px solid var(--divider-color, rgba(0,0,0,0.12));
+        transition: background .12s ease, border-color .12s ease;
       }
+      details.section summary:hover {
+        background: rgba(0,0,0,0.03);
+      }
+
+      /* hide default marker for consistency across browsers */
       details.section summary::-webkit-details-marker { display: none; }
-      /* simple caret */
-      details.section summary::before {
+      details.section summary::marker { font-size: 0; }
+
+      /* right-aligned caret (uses ::after) */
+      details.section summary::after {
         content: "▸";
-        display: inline-block;
-        transform-origin: center;
-        transition: transform .15s ease-in-out;
+        margin-left: 8px;
         color: var(--secondary-text-color);
+        transform: rotate(0deg);
+        transition: transform .15s ease-in-out, color .12s ease;
+        font-size: 12px;
       }
-      details.section[open] summary::before {
+      /* rotate caret when open to point downwards */
+      details.section[open] summary::after {
         transform: rotate(90deg);
+        color: var(--primary-text-color);
       }
-      /* content inside section */
+
+      /* section body visually separated and padded like stock editors */
       details.section .section-body {
-        padding: 6px 14px 0 14px;
+        padding: 12px;
+        margin-top: 8px;
+        border: 1px solid var(--divider-color, rgba(0,0,0,0.08));
+        border-radius: calc(var(--ha-card-border-radius, 8px) - 2px);
+        background: var(--card-background-color, transparent);
       }
 
       /* ensure ha-form inside sections takes full width */
