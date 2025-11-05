@@ -271,8 +271,8 @@ class ComicCard extends LitElement {
       .editor-row {
         display: flex;
         flex-direction: column;
-        gap: 10px; /* increased spacing between label and controls */
-        margin: 10px 0; /* increased spacing between rows */
+        gap: 14px; /* increased spacing between label and controls */
+        margin: 14px 0; /* increased spacing between rows */
       }
       .editor-row label {
         font-size: 12px;
@@ -280,21 +280,35 @@ class ComicCard extends LitElement {
       }
       .editor-row .controls {
         display: flex;
-        gap: 14px; /* more breathing room between controls */
+        gap: 20px; /* more breathing room between controls */
         align-items: center;
         flex-wrap: wrap;
       }
       /* make scaling + height fit nicely side-by-side */
       .scaling-controls {
         display: flex;
-        gap: 10px;
+        gap: 18px;
         align-items: center;
       }
       .scaling-controls select {
-        min-width: 150px;
+        min-width: 170px;
       }
       .scaling-controls input[type="number"] {
         width: 120px;
+      }
+      /* small vertical label + control for the height input */
+      .height-group {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+      .height-group .small-label {
+        font-size: 11px;
+        color: var(--secondary-text-color);
+      }
+      /* disabled appearance */
+      input[disabled] {
+        opacity: 0.6;
       }
       /* === Utility: Comments for clarity, no functional changes === */
     `;
@@ -477,19 +491,22 @@ class ComicCardEditor extends LitElement {
               <option value="noscale">No scaling</option>
             </select>
 
-            <input
-              type="number"
-              min="1"
-              .value=${String(this.config.limit_height ?? 250)}
-              @input=${e => {
-                const v = parseInt(e.target.value, 10);
-                this.config = { ...this.config, limit_height: isNaN(v) ? 250 : v };
-                this.dispatchEvent(new CustomEvent("config-changed", { detail: { config: this.config } }));
-              }}
-              title="Limit height in pixels (used when 'Height limited' is selected)"
-              style=${`width:120px; opacity:${isLimit ? 1 : 0.5};`}
-              ?disabled=${!isLimit}
-            />
+            <div class="height-group">
+              <span class="small-label">Height</span>
+              <input
+                type="number"
+                min="1"
+                .value=${String(this.config.limit_height ?? 250)}
+                @input=${e => {
+                  const v = parseInt(e.target.value, 10);
+                  this.config = { ...this.config, limit_height: isNaN(v) ? 250 : v };
+                  this.dispatchEvent(new CustomEvent("config-changed", { detail: { config: this.config } }));
+                }}
+                title="Limit height in pixels (used when 'Height limited' is selected)"
+                style=${`width:120px;`}
+                ?disabled=${!isLimit}
+              />
+            </div>
           </div>
         </div>
       </div>
