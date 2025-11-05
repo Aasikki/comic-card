@@ -168,6 +168,28 @@ class ComicCard extends LitElement {
         align-items: flex-start;
       }
 
+      /* === Height Limited option (behaves like noscale but locks height to var(--limit-height,250px)) === */
+      .image-wrapper.limit {
+        height: var(--limit-height, 250px);
+        max-height: var(--limit-height, 250px);
+      }
+      .comic-block.limit {
+        height: var(--limit-height, 250px);
+        max-height: var(--limit-height, 250px);
+      }
+      a.limit {
+        display: inline-block;
+        height: var(--limit-height, 250px);
+        max-height: var(--limit-height, 250px);
+      }
+      img.limit {
+        height: var(--limit-height, 250px);
+        max-height: var(--limit-height, 250px);
+        width: auto;
+        display: block;
+        object-fit: contain;
+      }
+
       /* === Utility & Effects (still used) === */
       .overflow-wrapper {
         position: static;
@@ -278,21 +300,28 @@ class ComicCard extends LitElement {
     const stateObj = this.hass.states[this.config.entity];
     const src = stateObj?.attributes?.entity_picture || "";
     const alt = stateObj?.attributes?.friendly_name || this.config.entity;
-    const fit = this.config.fit === "fit" ? "fit" : "noscale";
+    // allow three fit modes: "fit", "noscale" and new "limit"
+    const fit = (this.config.fit === "fit" || this.config.fit === "limit") ? this.config.fit : "noscale";
     const align = this.config.align === "center" ? "center" : "left";
     const wrapperClass = `comic-block ${fit} ${align}`;
-    const containerClass = `container ${align}${fit === "noscale" ? " noscale" : ""}`;
-    if (fit === "noscale") {
+    // treat both noscale and limit as "noscale" for container behavior (scrolling + shadows)
+    const containerClass = `container ${align}${(fit === "noscale" || fit === "limit") ? " noscale" : ""}`;
+
+    // compute limit height (default 250)
+    const limitHeight = (fit === "limit") ? (Number(this.config.limit_height) || 250) : null;
+    const limitStyle = fit === "limit" ? `--limit-height: ${limitHeight}px;` : "";
+
+    if (fit === "noscale" || fit === "limit") {
       if (align === "center") {
         return html`
           <div class="center-align">
-            <div class="image-wrapper">
+            <div class="image-wrapper ${fit}" style="${limitStyle}">
               <div class="shadow-host">
                 <div class="shadow-left"></div>
                 <div class="shadow-right"></div>
               </div>
               <div class="${containerClass}">
-                <div class="comic-block noscale ${align}">
+                <div class="comic-block ${fit} ${align}">
                   <a class="${fit}" href="${src}" target="_blank" rel="noopener noreferrer">
                     <img class="${fit}" src="${src}" alt="${alt}" />
                   </a>
@@ -303,13 +332,13 @@ class ComicCard extends LitElement {
         `;
       } else {
         return html`
-          <div class="image-wrapper">
+          <div class="image-wrapper ${fit}" style="${limitStyle}">
             <div class="shadow-host">
               <div class="shadow-left"></div>
               <div class="shadow-right"></div>
             </div>
             <div class="${containerClass}">
-              <div class="comic-block noscale ${align}">
+              <div class="comic-block ${fit} ${align}">
                 <a class="${fit}" href="${src}" target="_blank" rel="noopener noreferrer">
                   <img class="${fit}" src="${src}" alt="${alt}" />
                 </a>
@@ -358,7 +387,8 @@ class ComicCard extends LitElement {
     const image = Object.keys(hass.states).find(eid => eid.startsWith("image."));
     return {
       entity: image || "",
-      fit: "noscale",
+      fit: "limit",
+      limit_height: 250,
       align: "left"
     };
   }
@@ -393,7 +423,7 @@ class ComicCardEditor extends LitElement {
         placeholder="image.your_entity"
       />
       <select
-        .value=${this.config.fit || "noscale"}
+        .value=${this.config.fit || "limit"}
         @change=${e => {
           this.config = { ...this.config, fit: e.target.value };
           this.dispatchEvent(new CustomEvent("config-changed", { detail: { config: this.config } }));
@@ -401,7 +431,23 @@ class ComicCardEditor extends LitElement {
       >
         <option value="noscale">No scaling</option>
         <option value="fit">Fit</option>
+        <option value="limit">Height Limited</option>
       </select>
+
+      <!-- Height input for Height Limited mode -->
+      <input
+        type="number"
+        min="1"
+        .value=${String(this.config.limit_height ?? 250)}
+        @input=${e => {
+          const v = parseInt(e.target.value, 10);
+          this.config = { ...this.config, limit_height: isNaN(v) ? 250 : v };
+          this.dispatchEvent(new CustomEvent("config-changed", { detail: { config: this.config } }));
+        }}
+        title="Limit height in pixels (used when 'Height Limited' is selected)"
+        style="width: 120px;"
+      />
+
       <select
         .value=${this.config.align || "left"}
         @change=${e => {
