@@ -476,75 +476,47 @@ class ComicCardEditor extends LitElement {
   }
 
   _onFormValueChanged(e) {
-    const formValue = (e && e.detail && e.detail.value) ? e.detail.value : {};
-
-    // Merge incoming form values onto current config
-    const next = { ...this.config, ...formValue };
-
-    // Normalize/validate types and allowed values
-    if (next.limit_height !== undefined && next.limit_height !== null) {
-      const n = Number(next.limit_height);
-      next.limit_height = Number.isFinite(n) && n > 0 ? n : (this.config.limit_height || 250);
-    }
-
-    if (!["limit", "fit", "noscale"].includes(next.fit)) {
-      next.fit = this.config.fit || "limit";
-    }
-
-    if (!["left", "center"].includes(next.align)) {
-      next.align = this.config.align || "left";
-    }
-
+    const next = { ...this.config, ...e.detail.value };
     this.config = next;
-    this.requestUpdate();
     this.dispatchEvent(new CustomEvent("config-changed", { detail: { config: next } }));
   }
 
   render() {
     if (!this.config || !this.hass) return html``;
 
-    const schema = {
-      type: 'grid',
-      name: '',
-      schema: [
-        {
-          name: "entity",
-          type: 'entity',
-          label: "Entity",
-          domain: ['image'],
-          required: true,
-        },
-        {
-          name: "fit",
-          type: 'select',
-          label: "Scaling",
-          options: [
-            { value: "limit", label: "Height limited" },
-            { value: "fit", label: "Fit" },
-            { value: "noscale", label: "No scaling" }
-          ]
+    // Build schema dynamically so Height is only present when 'limit' is selected.
+    const fitVal = this.config.fit || "limit";
+    const schema = [
+      { name: "entity", required: true, selector: { entity: { domain: ["image"] } } },
+      {
+        name: "fit",
+        label: "Scaling",
+        selector: {
+          select: {
+            options: [
+              { value: "limit", label: "Height limited" },
+              { value: "fit", label: "Fit" },
+              { value: "noscale", label: "No scaling" }
+            ]
+          }
         }
-      ]
-    };
+      },
+    ];
 
-    // Only add height limit if "limit" mode is selected
-    if (this.config.fit === "limit") {
-      schema.schema.push({
-        name: "limit_height",
-        type: 'number', 
-        label: "Comic height (px)",
-        min: 1
-      });
+    if (fitVal === "limit") {
+      schema.push({ name: "limit_height", selector: { number: { min: 1 } } });
     }
 
-    schema.schema.push({
+    schema.push({
       name: "align",
-      type: 'select',
-      label: "Alignment", 
-      options: [
-        { value: "left", label: "Left" },
-        { value: "center", label: "Center" }
-      ]
+      selector: {
+        select: {
+          options: [
+            { value: "left", label: "Left" },
+            { value: "center", label: "Center" }
+          ]
+        }
+      }
     });
 
     return html`
