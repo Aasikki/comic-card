@@ -503,56 +503,54 @@ class ComicCardEditor extends LitElement {
   render() {
     if (!this.config || !this.hass) return html``;
 
-    // Build schema dynamically so Height is only present when 'limit' is selected.
-    const fitVal = this.config.fit || "limit";
-    const schema = [
-      { name: "entity", label: "Entity", required: true, selector: { entity: { domain: ["image"] } } },
-      {
-        name: "fit",
-        label: "Scaling",
-        selector: {
-          select: {
-            options: [
-              { value: "limit", label: "Height limited" },
-              { value: "fit", label: "Fit" },
-              { value: "noscale", label: "No scaling" }
-            ]
-          }
-        }
-      },
-    ];
-
-    if (fitVal === "limit") {
-      schema.push({ name: "limit_height", label: "Comic height (px)", selector: { number: { min: 1 } } });
-    }
-
-    schema.push({
-      name: "align",
-      label: "Alignment",
-      selector: {
-        select: {
+    const schema = {
+      type: 'grid',
+      name: '',
+      schema: [
+        {
+          name: "entity",
+          type: 'entity',
+          label: "Entity",
+          domain: ['image'],
+          required: true,
+        },
+        {
+          name: "fit",
+          type: 'select',
+          label: "Scaling",
           options: [
-            { value: "left", label: "Left" },
-            { value: "center", label: "Center" }
+            { value: "limit", label: "Height limited" },
+            { value: "fit", label: "Fit" },
+            { value: "noscale", label: "No scaling" }
           ]
         }
-      }
-    });
+      ]
+    };
 
-    // Deep-clone the schema to avoid ha-form internal caching/translation quirks
-    // and ensure the explicit labels are used.
-    const schemaClone = JSON.parse(JSON.stringify(schema));
-    // Add a changing token so ha-form treats this as a new schema each render
-    // (prevents internal caching that can show raw names instead of our labels).
-    schemaClone._uid = Date.now();
-    for (let i = 0; i < schemaClone.length; i++) {
-      schemaClone[i]._uid = `${schemaClone._uid}-${i}`;
+    // Only add height limit if "limit" mode is selected
+    if (this.config.fit === "limit") {
+      schema.schema.push({
+        name: "limit_height",
+        type: 'number', 
+        label: "Comic height (px)",
+        min: 1
+      });
     }
+
+    schema.schema.push({
+      name: "align",
+      type: 'select',
+      label: "Alignment", 
+      options: [
+        { value: "left", label: "Left" },
+        { value: "center", label: "Center" }
+      ]
+    });
 
     return html`
       <ha-form
         .hass=${this.hass}
-        .schema=${schemaClone}
+        .schema=${schema}
         .data=${this.config}
         @value-changed=${this._onFormValueChanged}
       ></ha-form>
