@@ -476,8 +476,27 @@ class ComicCardEditor extends LitElement {
   }
 
   _onFormValueChanged(e) {
-    const next = { ...this.config, ...e.detail.value };
+    const formValue = (e && e.detail && e.detail.value) ? e.detail.value : {};
+
+    // Merge incoming form values onto current config
+    const next = { ...this.config, ...formValue };
+
+    // Normalize/validate types and allowed values
+    if (next.limit_height !== undefined && next.limit_height !== null) {
+      const n = Number(next.limit_height);
+      next.limit_height = Number.isFinite(n) && n > 0 ? n : (this.config.limit_height || 250);
+    }
+
+    if (!["limit", "fit", "noscale"].includes(next.fit)) {
+      next.fit = this.config.fit || "limit";
+    }
+
+    if (!["left", "center"].includes(next.align)) {
+      next.align = this.config.align || "left";
+    }
+
     this.config = next;
+    this.requestUpdate();
     this.dispatchEvent(new CustomEvent("config-changed", { detail: { config: next } }));
   }
 
