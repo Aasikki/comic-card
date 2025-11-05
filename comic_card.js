@@ -481,70 +481,50 @@ class ComicCardEditor extends LitElement {
     this.dispatchEvent(new CustomEvent("config-changed", { detail: { config: next } }));
   }
 
-  // New handlers for the custom editor UI
-  _emitConfig(next) {
-    this.config = next;
-    this.dispatchEvent(new CustomEvent("config-changed", { detail: { config: next } }));
-  }
-
-  _onEntityPicked(e) {
-    const val = e.detail?.value || e.target?.value;
-    this._emitConfig({ ...this.config, entity: val });
-  }
-
-  _onSelectChange(e) {
-    const name = e.target.name;
-    const val = e.target.value;
-    this._emitConfig({ ...this.config, [name]: val });
-  }
-
-  _onNumberChange(e) {
-    const val = Number(e.target.value);
-    this._emitConfig({ ...this.config, limit_height: val });
-  }
-
   render() {
     if (!this.config || !this.hass) return html``;
 
     // Build schema dynamically so Height is only present when 'limit' is selected.
     const fitVal = this.config.fit || "limit";
+    const schema = [
+      { name: "entity", required: true, selector: { entity: { domain: ["image"] } } },
+      {
+        name: "fit",
+        selector: {
+          select: {
+            options: [
+              { value: "limit", label: "Height limited" },
+              { value: "fit", label: "Fit" },
+              { value: "noscale", label: "No scaling" }
+            ]
+          }
+        }
+      },
+    ];
 
-    // Render a custom editor so labels are controlled directly (no ha-form label mismatch)
+    if (fitVal === "limit") {
+      schema.push({ name: "limit_height", selector: { number: { min: 1 } } });
+    }
+
+    schema.push({
+      name: "align",
+      selector: {
+        select: {
+          options: [
+            { value: "left", label: "Left" },
+            { value: "center", label: "Center" }
+          ]
+        }
+      }
+    });
+
     return html`
-      <div class="editor-grid">
-        <label>Image entity</label>
-        <ha-entity-picker
-          .hass=${this.hass}
-          .value=${this.config.entity}
-          include-domains="image"
-          @value-changed=${this._onEntityPicked}
-        ></ha-entity-picker>
-
-        <label>Scaling mode</label>
-        <div class="controls scaling-controls">
-          <select name="fit" @change=${this._onSelectChange} .value=${this.config.fit || "limit"}>
-            <option value="limit">Height limited</option>
-            <option value="fit">Fit</option>
-            <option value="noscale">No scaling</option>
-          </select>
-          <mwc-textfield
-            class="height-input"
-            type="number"
-            label="Max height (px)"
-            .value=${String(this.config.limit_height ?? 250)}
-            ?disabled=${(this.config.fit || "limit") !== "limit"}
-            @input=${this._onNumberChange}
-          ></mwc-textfield>
-        </div>
-
-        <label>Alignment</label>
-        <div class="controls">
-          <select name="align" @change=${this._onSelectChange} .value=${this.config.align || "left"}>
-            <option value="left">Left</option>
-            <option value="center">Center</option>
-          </select>
-        </div>
-      </div>
+      <ha-form
+        .hass=${this.hass}
+        .schema=${schema}
+        .data=${this.config}
+        @value-changed=${this._onFormValueChanged}
+      ></ha-form>
     `;
   }
 }
