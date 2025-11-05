@@ -331,75 +331,6 @@ class ComicCard extends LitElement {
       mwc-textfield[disabled] { opacity: 0.6; }
 
       /* === Utility: Comments for clarity, no functional changes === */
-
-      /* Collapsible section styling (using native <details> to be robust)
-         Reworked to more closely match Home Assistant editor sections:
-         - boxed header with subtle divider
-         - right-aligned chevron that rotates on open
-         - section body separated and padded
-      */
-      details.section {
-        background: transparent;
-        margin: 12px 0;
-        border-radius: var(--ha-card-border-radius, 8px);
-        overflow: visible;
-      }
-
-      /* Header that matches Home Assistant editor sections */
-      details.section summary {
-        list-style: none;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 12px 16px;
-        cursor: pointer;
-        border-radius: var(--ha-card-border-radius, 8px);
-        background: var(--card-background-color, var(--surface, transparent));
-        border: 1px solid var(--divider-color, rgba(0,0,0,0.08));
-        color: var(--primary-text-color);
-        font-weight: 500;
-        gap: 12px;
-        transition: background .12s ease, border-color .12s ease;
-      }
-      details.section summary:hover {
-        background: rgba(0,0,0,0.02);
-      }
-
-      /* hide default marker for consistency across browsers */
-      details.section summary::-webkit-details-marker { display: none; }
-      details.section summary::marker { font-size: 0; }
-
-      /* title on the left, chevron on the right */
-      details.section summary .title {
-        font-size: 14px;
-        color: var(--primary-text-color);
-      }
-      details.section summary .chev {
-        color: var(--secondary-text-color);
-        transition: transform .15s ease-in-out, color .12s ease;
-        transform: rotate(0deg);
-        font-size: 12px;
-        line-height: 1;
-      }
-      details.section[open] summary .chev {
-        transform: rotate(90deg);
-        color: var(--primary-text-color);
-      }
-
-      /* section body visually separated and padded like stock editors */
-      details.section .section-body {
-        padding: 12px 12px;
-        margin-top: 8px;
-        border: 1px solid var(--divider-color, rgba(0,0,0,0.08));
-        border-radius: calc(var(--ha-card-border-radius, 8px) - 2px);
-        background: var(--card-background-color, transparent);
-      }
-
-      /* ensure ha-form inside sections takes full width */
-      details.section ha-form {
-        width: 100%;
-        display: block;
-      }
     `;
   }
   setConfig(config) {
@@ -544,8 +475,7 @@ class ComicCardEditor extends LitElement {
     return this._hass;
   }
 
-  _onSectionChanged(e) {
-    if (!e?.detail?.value) return;
+  _onFormValueChanged(e) {
     const next = { ...this.config, ...e.detail.value };
     this.config = next;
     this.dispatchEvent(new CustomEvent("config-changed", { detail: { config: next } }));
@@ -554,15 +484,12 @@ class ComicCardEditor extends LitElement {
   render() {
     if (!this.config || !this.hass) return html``;
 
+    // Build schema dynamically so Height is only present when 'limit' is selected.
     const fitVal = this.config.fit || "limit";
-
-    const contentSchema = [
-      { name: "entity", required: true, selector: { entity: { domain: ["image"] } } },
-    ];
-
-    const scalingSchema = [
+    const schema = [
+      { name: "Entity", required: true, selector: { entity: { domain: ["image"] } } },
       {
-        name: "fit",
+        name: "Scaling",
         selector: {
           select: {
             options: [
@@ -572,62 +499,32 @@ class ComicCardEditor extends LitElement {
             ]
           }
         }
-      }
+      },
     ];
-    if (fitVal === "limit") {
-      scalingSchema.push({ name: "limit_height", selector: { number: { min: 1 } } });
+
+    if (fitVal === "Height (px)") {
+      schema.push({ name: "limit_height", selector: { number: { min: 1 } } });
     }
 
-    const positionSchema = [
-      {
-        name: "align",
-        selector: {
-          select: {
-            options: [
-              { value: "left", label: "Left" },
-              { value: "center", label: "Center" }
-            ]
-          }
+    schema.push({
+      name: "Alignment",
+      selector: {
+        select: {
+          options: [
+            { value: "left", label: "Left" },
+            { value: "center", label: "Center" }
+          ]
         }
       }
-    ];
+    });
 
     return html`
-      <details class="section" open>
-        <summary><span class="title">Content</span><span class="chev">▸</span></summary>
-        <div class="section-body">
-          <ha-form
-            .hass=${this.hass}
-            .schema=${contentSchema}
-            .data=${this.config}
-            @value-changed=${this._onSectionChanged}
-          ></ha-form>
-        </div>
-      </details>
-
-      <details class="section" open>
-        <summary><span class="title">Scaling</span><span class="chev">▸</span></summary>
-        <div class="section-body">
-          <ha-form
-            .hass=${this.hass}
-            .schema=${scalingSchema}
-            .data=${this.config}
-            @value-changed=${this._onSectionChanged}
-          ></ha-form>
-        </div>
-      </details>
-
-      <details class="section" open>
-        <summary><span class="title">Position</span><span class="chev">▸</span></summary>
-        <div class="section-body">
-          <ha-form
-            .hass=${this.hass}
-            .schema=${positionSchema}
-            .data=${this.config}
-            @value-changed=${this._onSectionChanged}
-          ></ha-form>
-        </div>
-      </details>
+      <ha-form
+        .hass=${this.hass}
+        .schema=${schema}
+        .data=${this.config}
+        @value-changed=${this._onFormValueChanged}
+      ></ha-form>
     `;
   }
 }
