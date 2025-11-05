@@ -487,10 +487,10 @@ class ComicCardEditor extends LitElement {
     // Build schema dynamically so Height is only present when 'limit' is selected.
     const fitVal = this.config.fit || "limit";
     const schema = [
-      { name: "entity", required: true, selector: { entity: { domain: ["image"] } } },
+      { name: "entity", required: true, label: "Image entity", selector: { entity: { domain: ["image"] } } },
       {
         name: "fit",
-        label: "Scaling",
+        label: "Scaling mode",
         selector: {
           select: {
             options: [
@@ -504,11 +504,12 @@ class ComicCardEditor extends LitElement {
     ];
 
     if (fitVal === "limit") {
-      schema.push({ name: "limit_height", selector: { number: { min: 1 } } });
+      schema.push({ name: "limit_height", label: "Max height (px)", selector: { number: { min: 100 } } });
     }
 
     schema.push({
       name: "align",
+      label: "Alignment",
       selector: {
         select: {
           options: [
