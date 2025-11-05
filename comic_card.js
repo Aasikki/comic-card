@@ -271,8 +271,8 @@ class ComicCard extends LitElement {
       .editor-row {
         display: flex;
         flex-direction: column;
-        gap: 14px; /* increased spacing between label and controls */
-        margin: 14px 0; /* increased spacing between rows */
+        gap: 6px;
+        margin: 6px 0;
       }
       .editor-row label {
         font-size: 12px;
@@ -280,36 +280,56 @@ class ComicCard extends LitElement {
       }
       .editor-row .controls {
         display: flex;
-        gap: 20px; /* more breathing room between controls */
+        gap: 8px;
         align-items: center;
-        flex-wrap: wrap;
       }
-      /* make scaling + height fit nicely side-by-side */
+
+      /* Editor: grid layout to match HA look; labels left, controls right */
+      .editor-grid {
+        display: grid;
+        grid-template-columns: 110px 1fr;
+        column-gap: 20px;
+        row-gap: 14px;
+        align-items: center;
+        margin: 14px 0;
+      }
+      .editor-grid label {
+        justify-self: end;
+        font-size: 13px;
+        color: var(--secondary-text-color);
+      }
+      .editor-grid .controls {
+        display: flex;
+        gap: 14px;
+        align-items: center;
+        width: 100%;
+      }
+
+      /* scaling + height inline */
       .scaling-controls {
         display: flex;
-        gap: 18px;
+        gap: 12px;
         align-items: center;
+        width: 100%;
       }
       .scaling-controls select {
         min-width: 170px;
+        flex: 1 1 auto;
       }
-      .scaling-controls input[type="number"] {
+      .scaling-controls .height-input {
         width: 120px;
+        flex: 0 0 120px;
       }
-      /* small vertical label + control for the height input */
-      .height-group {
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
-      }
-      .height-group .small-label {
-        font-size: 11px;
-        color: var(--secondary-text-color);
+
+      /* make entity picker / selects expand nicely */
+      .editor-grid ha-entity-picker,
+      .editor-grid select,
+      .editor-grid mwc-textfield {
+        width: 100%;
       }
       /* disabled appearance */
-      input[disabled] {
-        opacity: 0.6;
-      }
+      mwc-textfield[disabled] { opacity: 0.6; }
+
       /* === Utility: Comments for clarity, no functional changes === */
     `;
   }
@@ -454,72 +474,59 @@ class ComicCardEditor extends LitElement {
   get hass() {
     return this._hass;
   }
+
+  _updateConfig(key, value) {
+    const next = { ...this.config, [key]: value };
+    this.config = next;
+    this.dispatchEvent(new CustomEvent("config-changed", { detail: { config: next } }));
+  }
+
   render() {
     if (!this.config) return html``;
     const fitVal = this.config.fit || "limit";
     const isLimit = fitVal === "limit";
+
     return html`
-      <div class="editor-row">
+      <div class="editor-grid">
         <label>Entity</label>
         <div class="controls">
-          <input
-            type="text"
+          <ha-entity-picker
+            .hass=${this.hass}
             .value=${this.config.entity || ""}
-            @input=${e => {
-              this.config = { ...this.config, entity: e.target.value };
-              this.dispatchEvent(new CustomEvent("config-changed", { detail: { config: this.config } }));
-            }}
-            placeholder="image.your_entity"
-            style="flex:1;"
-          />
+            domain-filter='["image"]'
+            @change=${e => this._updateConfig("entity", e.target.value)}
+          ></ha-entity-picker>
         </div>
-      </div>
 
-      <div class="editor-row">
         <label>Scaling</label>
         <div class="controls">
           <div class="scaling-controls">
             <select
               .value=${fitVal}
-              @change=${e => {
-                this.config = { ...this.config, fit: e.target.value };
-                this.dispatchEvent(new CustomEvent("config-changed", { detail: { config: this.config } }));
-              }}
+              @change=${e => this._updateConfig("fit", e.target.value)}
             >
               <option value="limit">Height limited</option>
               <option value="fit">Fit</option>
               <option value="noscale">No scaling</option>
             </select>
 
-            <div class="height-group">
-              <span class="small-label">Height</span>
-              <input
-                type="number"
-                min="1"
-                .value=${String(this.config.limit_height ?? 250)}
-                @input=${e => {
-                  const v = parseInt(e.target.value, 10);
-                  this.config = { ...this.config, limit_height: isNaN(v) ? 250 : v };
-                  this.dispatchEvent(new CustomEvent("config-changed", { detail: { config: this.config } }));
-                }}
-                title="Limit height in pixels (used when 'Height limited' is selected)"
-                style=${`width:120px;`}
-                ?disabled=${!isLimit}
-              />
-            </div>
+            <mwc-textfield
+              class="height-input"
+              type="number"
+              min="1"
+              .value=${String(this.config.limit_height ?? 250)}
+              label="Height (px)"
+              ?disabled=${!isLimit}
+              @input=${e => this._updateConfig("limit_height", parseInt(e.target.value, 10) || 250)}
+            ></mwc-textfield>
           </div>
         </div>
-      </div>
 
-      <div class="editor-row">
         <label>Position</label>
         <div class="controls">
           <select
             .value=${this.config.align || "left"}
-            @change=${e => {
-              this.config = { ...this.config, align: e.target.value };
-              this.dispatchEvent(new CustomEvent("config-changed", { detail: { config: this.config } }));
-            }}
+            @change=${e => this._updateConfig("align", e.target.value)}
           >
             <option value="left">Left</option>
             <option value="center">Center</option>
