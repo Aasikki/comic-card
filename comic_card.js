@@ -463,10 +463,16 @@ customElements.define("comic-card", ComicCard);
 class ComicCardEditor extends LitElement {
   static get properties() { return { hass: {}, config: {} }; }
 
+  // Ensure sensible defaults so the form shows selected defaults and height is prefilled
   setConfig(config) {
-    this.config = { ...config };
+    this.config = {
+      limit_height: 250,
+      fit: "limit",
+      align: "left",
+      ...(config || {})
+    };
   }
-
+  
   set hass(hass) {
     this._hass = hass;
     this.requestUpdate();
@@ -487,9 +493,15 @@ class ComicCardEditor extends LitElement {
     // Build schema dynamically so Height is only present when 'limit' is selected.
     const fitVal = this.config.fit || "limit";
     const schema = [
-      { name: "Entity", required: true, selector: { entity: { domain: ["image"] } } },
       {
-        name: "Scaling",
+        name: "entity",
+        label: "Entity",
+        required: true,
+        selector: { entity: { domain: ["image"] } }
+      },
+      {
+        name: "fit",
+        label: "Scaling",
         selector: {
           select: {
             options: [
@@ -499,15 +511,20 @@ class ComicCardEditor extends LitElement {
             ]
           }
         }
-      },
+      }
     ];
 
     if (fitVal === "limit") {
-      schema.push({ name: "Height (px)", selector: { number: { min: 1 } } });
+      schema.push({
+        name: "limit_height",
+        label: "Height",
+        selector: { number: { min: 1 } }
+      });
     }
 
     schema.push({
-      name: "Alignment",
+      name: "align",
+      label: "Position",
       selector: {
         select: {
           options: [
