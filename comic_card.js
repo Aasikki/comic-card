@@ -340,51 +340,55 @@ class ComicCard extends LitElement {
       */
       details.section {
         background: transparent;
+        margin: 12px 0;
         border-radius: var(--ha-card-border-radius, 8px);
-        margin: 10px 0;
+        overflow: visible;
       }
 
-      /* Header that looks like HA editor section */
+      /* Header that matches Home Assistant editor sections */
       details.section summary {
         list-style: none;
         display: flex;
         align-items: center;
-        gap: 12px;
-        padding: 10px 12px;
+        justify-content: space-between;
+        padding: 12px 16px;
         cursor: pointer;
-        font-weight: 600;
-        color: var(--primary-text-color);
         border-radius: var(--ha-card-border-radius, 8px);
-        background: var(--card-background-color, transparent);
-        border: 1px solid var(--divider-color, rgba(0,0,0,0.12));
+        background: var(--card-background-color, var(--surface, transparent));
+        border: 1px solid var(--divider-color, rgba(0,0,0,0.08));
+        color: var(--primary-text-color);
+        font-weight: 500;
+        gap: 12px;
         transition: background .12s ease, border-color .12s ease;
       }
       details.section summary:hover {
-        background: rgba(0,0,0,0.03);
+        background: rgba(0,0,0,0.02);
       }
 
       /* hide default marker for consistency across browsers */
       details.section summary::-webkit-details-marker { display: none; }
       details.section summary::marker { font-size: 0; }
 
-      /* right-aligned caret (uses ::after) */
-      details.section summary::after {
-        content: "▸";
-        margin-left: 8px;
-        color: var(--secondary-text-color);
-        transform: rotate(0deg);
-        transition: transform .15s ease-in-out, color .12s ease;
-        font-size: 12px;
+      /* title on the left, chevron on the right */
+      details.section summary .title {
+        font-size: 14px;
+        color: var(--primary-text-color);
       }
-      /* rotate caret when open to point downwards */
-      details.section[open] summary::after {
+      details.section summary .chev {
+        color: var(--secondary-text-color);
+        transition: transform .15s ease-in-out, color .12s ease;
+        transform: rotate(0deg);
+        font-size: 12px;
+        line-height: 1;
+      }
+      details.section[open] summary .chev {
         transform: rotate(90deg);
         color: var(--primary-text-color);
       }
 
       /* section body visually separated and padded like stock editors */
       details.section .section-body {
-        padding: 12px;
+        padding: 12px 12px;
         margin-top: 8px;
         border: 1px solid var(--divider-color, rgba(0,0,0,0.08));
         border-radius: calc(var(--ha-card-border-radius, 8px) - 2px);
@@ -590,7 +594,7 @@ class ComicCardEditor extends LitElement {
 
     return html`
       <details class="section" open>
-        <summary>Content</summary>
+        <summary><span class="title">Content</span><span class="chev">▸</span></summary>
         <div class="section-body">
           <ha-form
             .hass=${this.hass}
@@ -602,7 +606,7 @@ class ComicCardEditor extends LitElement {
       </details>
 
       <details class="section" open>
-        <summary>Scaling</summary>
+        <summary><span class="title">Scaling</span><span class="chev">▸</span></summary>
         <div class="section-body">
           <ha-form
             .hass=${this.hass}
@@ -614,7 +618,7 @@ class ComicCardEditor extends LitElement {
       </details>
 
       <details class="section" open>
-        <summary>Position</summary>
+        <summary><span class="title">Position</span><span class="chev">▸</span></summary>
         <div class="section-body">
           <ha-form
             .hass=${this.hass}
