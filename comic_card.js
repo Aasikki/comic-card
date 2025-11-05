@@ -168,7 +168,7 @@ class ComicCard extends LitElement {
         align-items: flex-start;
       }
 
-      /* === Height Limited option (behaves like noscale but locks height to var(--limit-height,250px)) === */
+      /* === Height limited option (behaves like noscale but locks height to var(--limit-height,250px)) === */
       .image-wrapper.limit {
         height: var(--limit-height, 250px);
         max-height: var(--limit-height, 250px);
@@ -265,6 +265,23 @@ class ComicCard extends LitElement {
         width: auto;
         height: auto;
         display: block;
+      }
+
+      /* Simple editor label styles */
+      .editor-row {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        margin: 6px 0;
+      }
+      .editor-row label {
+        font-size: 12px;
+        color: var(--secondary-text-color);
+      }
+      .editor-row .controls {
+        display: flex;
+        gap: 8px;
+        align-items: center;
       }
       /* === Utility: Comments for clarity, no functional changes === */
     `;
@@ -412,52 +429,76 @@ class ComicCardEditor extends LitElement {
   }
   render() {
     if (!this.config) return html``;
+    const fitVal = this.config.fit || "limit";
+    const isLimit = fitVal === "limit";
     return html`
-      <input
-        type="text"
-        .value=${this.config.entity || ""}
-        @input=${e => {
-          this.config = { ...this.config, entity: e.target.value };
-          this.dispatchEvent(new CustomEvent("config-changed", { detail: { config: this.config } }));
-        }}
-        placeholder="image.your_entity"
-      />
-      <select
-        .value=${this.config.fit || "limit"}
-        @change=${e => {
-          this.config = { ...this.config, fit: e.target.value };
-          this.dispatchEvent(new CustomEvent("config-changed", { detail: { config: this.config } }));
-        }}
-      >
-        <option value="noscale">No scaling</option>
-        <option value="fit">Fit</option>
-        <option value="limit">Height Limited</option>
-      </select>
+      <div class="editor-row">
+        <label>Entity</label>
+        <div class="controls">
+          <input
+            type="text"
+            .value=${this.config.entity || ""}
+            @input=${e => {
+              this.config = { ...this.config, entity: e.target.value };
+              this.dispatchEvent(new CustomEvent("config-changed", { detail: { config: this.config } }));
+            }}
+            placeholder="image.your_entity"
+            style="flex:1;"
+          />
+        </div>
+      </div>
 
-      <!-- Height input for Height Limited mode -->
-      <input
-        type="number"
-        min="1"
-        .value=${String(this.config.limit_height ?? 250)}
-        @input=${e => {
-          const v = parseInt(e.target.value, 10);
-          this.config = { ...this.config, limit_height: isNaN(v) ? 250 : v };
-          this.dispatchEvent(new CustomEvent("config-changed", { detail: { config: this.config } }));
-        }}
-        title="Limit height in pixels (used when 'Height Limited' is selected)"
-        style="width: 120px;"
-      />
+      <div class="editor-row">
+        <label>Scaling</label>
+        <div class="controls">
+          <select
+            .value=${fitVal}
+            @change=${e => {
+              this.config = { ...this.config, fit: e.target.value };
+              this.dispatchEvent(new CustomEvent("config-changed", { detail: { config: this.config } }));
+            }}
+          >
+            <option value="limit">Height limited</option>
+            <option value="fit">Fit</option>
+            <option value="noscale">No scaling</option>
+          </select>
+        </div>
+      </div>
 
-      <select
-        .value=${this.config.align || "left"}
-        @change=${e => {
-          this.config = { ...this.config, align: e.target.value };
-          this.dispatchEvent(new CustomEvent("config-changed", { detail: { config: this.config } }));
-        }}
-      >
-        <option value="left">Left</option>
-        <option value="center">Center</option>
-      </select>
+      <div class="editor-row">
+        <label>Height</label>
+        <div class="controls">
+          <input
+            type="number"
+            min="1"
+            .value=${String(this.config.limit_height ?? 250)}
+            @input=${e => {
+              const v = parseInt(e.target.value, 10);
+              this.config = { ...this.config, limit_height: isNaN(v) ? 250 : v };
+              this.dispatchEvent(new CustomEvent("config-changed", { detail: { config: this.config } }));
+            }}
+            title="Limit height in pixels (used when 'Height limited' is selected)"
+            style=${`width:120px; opacity:${isLimit ? 1 : 0.5};`}
+            ?disabled=${!isLimit}
+          />
+        </div>
+      </div>
+
+      <div class="editor-row">
+        <label>Position</label>
+        <div class="controls">
+          <select
+            .value=${this.config.align || "left"}
+            @change=${e => {
+              this.config = { ...this.config, align: e.target.value };
+              this.dispatchEvent(new CustomEvent("config-changed", { detail: { config: this.config } }));
+            }}
+          >
+            <option value="left">Left</option>
+            <option value="center">Center</option>
+          </select>
+        </div>
+      </div>
     `;
   }
 }
