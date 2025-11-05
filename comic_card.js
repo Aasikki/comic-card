@@ -502,8 +502,8 @@ class ComicCardEditor extends LitElement {
       },
     ];
 
-    if (fitVal === "Height (px)") {
-      schema.push({ name: "limit_height", selector: { number: { min: 1 } } });
+    if (fitVal === "limit") {
+      schema.push({ name: "Height (px)", selector: { number: { min: 1 } } });
     }
 
     schema.push({
