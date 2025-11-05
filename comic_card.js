@@ -520,10 +520,14 @@ class ComicCardEditor extends LitElement {
       }
     });
 
+    // Deep-clone the schema to avoid ha-form internal caching/translation quirks
+    // and ensure the explicit labels are used.
+    const schemaClone = JSON.parse(JSON.stringify(schema));
+
     return html`
       <ha-form
         .hass=${this.hass}
-        .schema=${schema}
+        .schema=${schemaClone}
         .data=${this.config}
         @value-changed=${this._onFormValueChanged}
       ></ha-form>
