@@ -286,8 +286,7 @@ class ComicCard extends LitElement {
                <div class="shadow-right"></div>
              </div>
              <div class="${containerClass}">
--              <div class="comic-block ${fit} ${align}">
-+              <div class="comic-block ${classMode} ${align}">
+               <div class="comic-block ${classMode} ${align}">
                  <a class="${classMode}" href="${src}" target="_blank" rel="noopener noreferrer">
                    <img class="${classMode}" src="${src}" alt="${alt}" />
                  </a>
