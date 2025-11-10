@@ -462,34 +462,6 @@ class ComicCard extends LitElement {
       }
     };
   }
-
-  // Provide a simple preview for the card picker. Uses the provided config when available,
-  // falls back to an embedded preview image. Supports scaling.mode and alignment.
-  static getPreview(config) {
-    const cfg = config || {};
-    const mode = cfg.scaling?.mode || "fit";
-    const alignment = cfg.alignment === "center" ? "center" : "left";
-
-    // Fallback preview image (public image used for preview in the picker)
-    const previewImage = "https://www.home-assistant.io/images/merchandising/home-assistant-logo.png";
-
-    // Build inline styles to approximate the card's appearance in the picker
-    const containerStyles = [
-      "display:flex",
-      "align-items:center",
-      alignment === "center" ? "justify-content:center" : "justify-content:flex-start",
-      "padding:8px",
-      "background:transparent",
-      "width:100%",
-      "height:100%"
-    ].join(";");
-
-    const imgStyles = mode === "fit"
-      ? "width:100%;height:auto;object-fit:contain;display:block;"
-      : "max-height:120px;object-fit:contain;display:block;";
-
-    return `<div style="${containerStyles}"><img src="${previewImage}" style="${imgStyles}" alt="preview"/></div>`;
-  }
 }
 customElements.define("comic-card", ComicCard);
 
