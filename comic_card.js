@@ -247,52 +247,54 @@ class ComicCard extends LitElement {
     const stateObj = this.hass.states[this.config.entity];
     const src = stateObj?.attributes?.entity_picture || "";
     const alt = stateObj?.attributes?.friendly_name || this.config.entity;
-    // allow three fit modes: "fit", "noscale" and new "limit"
-    const fit = (this.config.fit === "fit" || this.config.fit === "limit") ? this.config.fit : "noscale";
+    // scaling renamed from 'fit' to 'scaling'; values: 'fit', 'noscale', 'limit_height'
+    const scaling = (this.config.scaling === "fit" || this.config.scaling === "limit_height") ? this.config.scaling : "noscale";
     const align = this.config.align === "center" ? "center" : "left";
-    // treat both noscale and limit as "noscale" for container behavior (scrolling + shadows)
-    const containerClass = `container ${align}${(fit === "noscale" || fit === "limit") ? " noscale" : ""}`;
+    // map scaling to CSS class: use 'limit' class for 'limit_height' to keep existing styles
+    const classMode = (scaling === "limit_height") ? "limit" : scaling;
+    // treat both noscale and limit_height as "noscale" for container behavior (scrolling + shadows)
+    const containerClass = `container ${align}${(scaling === "noscale" || scaling === "limit_height") ? " noscale" : ""}`;
 
-    // compute limit height (default 250)
-    const limitHeight = (fit === "limit") ? (Number(this.config.limit_height) || 250) : null;
-    const limitStyle = fit === "limit" ? `--limit-height: ${limitHeight}px;` : "";
+    // compute height (default 250)
+    const heightVal = (scaling === "limit_height") ? (Number(this.config.height) || 250) : null;
+    const limitStyle = scaling === "limit_height" ? `--limit-height: ${heightVal}px;` : "";
 
-    if (fit === "noscale" || fit === "limit") {
+    if (scaling === "noscale" || scaling === "limit_height") {
       if (align === "center") {
         return html`
           <div class="center-align">
-            <div class="image-wrapper ${fit}" style="${limitStyle}">
+            <div class="image-wrapper ${classMode}" style="${limitStyle}">
               <div class="shadow-host">
                 <div class="shadow-left"></div>
                 <div class="shadow-right"></div>
               </div>
               <div class="${containerClass}">
-                <div class="comic-block ${fit} ${align}">
-                  <a class="${fit}" href="${src}" target="_blank" rel="noopener noreferrer">
-                    <img class="${fit}" src="${src}" alt="${alt}" />
-                  </a>
-                </div>
-              </div>
-            </div>
-          </div>
-        `;
+                <div class="comic-block ${classMode} ${align}">
+                   <a class="${classMode}" href="${src}" target="_blank" rel="noopener noreferrer">
+                     <img class="${classMode}" src="${src}" alt="${alt}" />
+                   </a>
+                 </div>
+               </div>
+             </div>
+           </div>
+         `;
       } else {
         return html`
-          <div class="image-wrapper ${fit}" style="${limitStyle}">
-            <div class="shadow-host">
-              <div class="shadow-left"></div>
-              <div class="shadow-right"></div>
-            </div>
-            <div class="${containerClass}">
-              <div class="comic-block ${fit} ${align}">
-                <a class="${fit}" href="${src}" target="_blank" rel="noopener noreferrer">
-                  <img class="${fit}" src="${src}" alt="${alt}" />
-                </a>
-              </div>
-            </div>
-          </div>
-        `;
-      }
+          <div class="image-wrapper ${classMode}" style="${limitStyle}">
+             <div class="shadow-host">
+               <div class="shadow-left"></div>
+               <div class="shadow-right"></div>
+             </div>
+             <div class="${containerClass}">
+               <div class="comic-block ${classMode} ${align}">
+                 <a class="${classMode}" href="${src}" target="_blank" rel="noopener noreferrer">
+                   <img class="${classMode}" src="${src}" alt="${alt}" />
+                 </a>
+               </div>
+             </div>
+           </div>
+         `;
+       }
     } else {
       // FIT MODE
       if (align === "center") {
@@ -333,8 +335,8 @@ class ComicCard extends LitElement {
     const image = Object.keys(hass.states).find(eid => eid.startsWith("image."));
     return {
       entity: image || "",
-      fit: "limit",
-      limit_height: 250,
+      scaling: "limit_height",
+      height: 250,
       align: "left"
     };
   }
@@ -366,16 +368,16 @@ class ComicCardEditor extends LitElement {
   render() {
     if (!this.config || !this.hass) return html``;
 
-    // Build schema dynamically so Height is only present when 'limit' is selected.
-    const fitVal = this.config.fit || "limit";
+    // Build schema dynamically so Height is only present when 'limit_height' is selected.
+    const scalingVal = this.config.scaling || "limit_height";
     const schema = [
       { name: "entity", required: true, selector: { entity: { domain: ["image"] } } },
       {
-        name: "fit",
+        name: "scaling",
         selector: {
           select: {
             options: [
-              { value: "limit", label: "Height limited" },
+              { value: "limit_height", label: "Height limited" },
               { value: "fit", label: "Fit" },
               { value: "noscale", label: "No scaling" }
             ]
@@ -384,8 +386,8 @@ class ComicCardEditor extends LitElement {
       },
     ];
 
-    if (fitVal === "limit") {
-      schema.push({ name: "limit_height", selector: { number: { min: 1 } } });
+    if (scalingVal === "limit_height") {
+      schema.push({ name: "height", selector: { number: { min: 1 } } });
     }
 
     schema.push({
