@@ -226,10 +226,14 @@ class ComicCard extends LitElement {
         }
       : { mode: "limit_height", height: 250 };
 
-    this.config = {
-      ...config,
-      scaling: scalingCfg
-    };
+    // Normalize legacy `align` to `alignment`
+    const normalized = { ...config, scaling: scalingCfg };
+    if (config.align !== undefined && normalized.alignment === undefined) {
+      normalized.alignment = config.align;
+      delete normalized.align;
+    }
+
+    this.config = normalized;
   }
   firstUpdated() {
     this._updateShadows();
@@ -263,18 +267,18 @@ class ComicCard extends LitElement {
       : { mode: "noscale" };
     const scalingMode = scalingCfg.mode || "noscale";
 
-    const align = this.config.align === "center" ? "center" : "left";
+    const alignment = this.config.alignment === "center" ? "center" : "left";
     // map scaling to CSS class: use 'limit' class for 'limit_height' to keep existing styles
     const classMode = (scalingMode === "limit_height") ? "limit" : scalingMode;
     // treat both noscale and limit_height as "noscale" for container behavior (scrolling + shadows)
-    const containerClass = `container ${align}${(scalingMode === "noscale" || scalingMode === "limit_height") ? " noscale" : ""}`;
+    const containerClass = `container ${alignment}${(scalingMode === "noscale" || scalingMode === "limit_height") ? " noscale" : ""}`;
 
     // compute height (default 250) when using limit_height
     const heightVal = (scalingMode === "limit_height") ? (Number(scalingCfg.height || 250) || 250) : null;
     const limitStyle = scalingMode === "limit_height" ? `--limit-height: ${heightVal}px;` : "";
 
     if (scalingMode === "noscale" || scalingMode === "limit_height") {
-      if (align === "center") {
+      if (alignment === "center") {
         return html`
           <div class="center-align">
             <div class="image-wrapper ${classMode}" style="${limitStyle}">
@@ -283,7 +287,7 @@ class ComicCard extends LitElement {
                 <div class="shadow-right"></div>
               </div>
               <div class="${containerClass}">
-                <div class="comic-block ${classMode} ${align}">
+                <div class="comic-block ${classMode} ${alignment}">
                    <a class="${classMode}" href="${src}" target="_blank" rel="noopener noreferrer">
                      <img class="${classMode}" src="${src}" alt="${alt}" />
                    </a>
@@ -300,7 +304,7 @@ class ComicCard extends LitElement {
                <div class="shadow-right"></div>
              </div>
              <div class="${containerClass}">
-               <div class="comic-block ${classMode} ${align}">
+               <div class="comic-block ${classMode} ${alignment}">
                  <a class="${classMode}" href="${src}" target="_blank" rel="noopener noreferrer">
                    <img class="${classMode}" src="${src}" alt="${alt}" />
                  </a>
@@ -311,7 +315,7 @@ class ComicCard extends LitElement {
        }
     } else {
       // FIT MODE
-      if (align === "center") {
+      if (alignment === "center") {
         return html`
           <div class="center-align">
             <div class="image-wrapper fit">
@@ -350,7 +354,7 @@ class ComicCard extends LitElement {
     return {
       entity: image || "",
       scaling: { mode: "limit_height", height: 250 },
-      align: "left"
+      alignment: "left"
     };
   }
 }
@@ -365,7 +369,15 @@ class ComicCardEditor extends LitElement {
     const scalingCfg = (config.scaling && typeof config.scaling === "object")
       ? { mode: config.scaling.mode || "limit_height", height: config.scaling.height !== undefined ? Number(config.scaling.height) : 250 }
       : { mode: "limit_height", height: 250 };
-    this.config = { ...config, scaling: scalingCfg };
+
+    // Normalize legacy `align` to `alignment` for the editor
+    const normalized = { ...config, scaling: scalingCfg };
+    if (config.align !== undefined && normalized.alignment === undefined) {
+      normalized.alignment = config.align;
+      delete normalized.align;
+    }
+
+    this.config = normalized;
   }
 
   set hass(hass) {
@@ -392,8 +404,9 @@ class ComicCardEditor extends LitElement {
     merged.scaling = { mode: selectedMode };
     if (selectedHeight !== undefined) merged.scaling.height = Number(selectedHeight);
 
-    // store only nested height (remove flat height)
+    // store only nested height (remove flat height) and legacy 'align'
     delete merged.height;
+    if (merged.align !== undefined) delete merged.align;
 
     this.config = merged;
     this.dispatchEvent(new CustomEvent("config-changed", { detail: { config: merged } }));
@@ -425,7 +438,7 @@ class ComicCardEditor extends LitElement {
     }
 
     schema.push({
-      name: "align",
+      name: "alignment",
       selector: {
         select: {
           options: [
@@ -440,7 +453,8 @@ class ComicCardEditor extends LitElement {
     const formData = {
       ...this.config,
       scaling: scalingVal,
-      height: (this.config.scaling && this.config.scaling.height)
+      height: (this.config.scaling && this.config.scaling.height),
+      alignment: this.config.alignment
     };
 
     return html`
