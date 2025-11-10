@@ -393,7 +393,7 @@ class ComicCardEditor extends LitElement {
       selector: {
         select: {
           options: [
-            { value: "left", label: "Left" },
+            { value: "left", label: "Test" },
             { value: "center", label: "Center" }
           ]
         }
