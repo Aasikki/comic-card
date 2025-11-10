@@ -218,8 +218,17 @@ class ComicCard extends LitElement {
   }
   setConfig(config) {
     if (!config.entity) throw new Error("Entity required");
+    // Expect scaling as nested object: { mode: "limit_height" | "fit" | "noscale", height?: number }
+    const scalingCfg = (config.scaling && typeof config.scaling === "object")
+      ? {
+          mode: config.scaling.mode || "limit_height",
+          height: config.scaling.height !== undefined ? Number(config.scaling.height) : 250
+        }
+      : { mode: "limit_height", height: 250 };
+
     this.config = {
       ...config,
+      scaling: scalingCfg
     };
   }
   firstUpdated() {
@@ -247,19 +256,24 @@ class ComicCard extends LitElement {
     const stateObj = this.hass.states[this.config.entity];
     const src = stateObj?.attributes?.entity_picture || "";
     const alt = stateObj?.attributes?.friendly_name || this.config.entity;
-    // scaling renamed from 'fit' to 'scaling'; values: 'fit', 'noscale', 'limit_height'
-    const scaling = (this.config.scaling === "fit" || this.config.scaling === "limit_height") ? this.config.scaling : "noscale";
+
+    // scaling is a nested object { mode, height }
+    const scalingCfg = (this.config.scaling && typeof this.config.scaling === "object")
+      ? this.config.scaling
+      : { mode: "noscale" };
+    const scalingMode = scalingCfg.mode || "noscale";
+
     const align = this.config.align === "center" ? "center" : "left";
     // map scaling to CSS class: use 'limit' class for 'limit_height' to keep existing styles
-    const classMode = (scaling === "limit_height") ? "limit" : scaling;
+    const classMode = (scalingMode === "limit_height") ? "limit" : scalingMode;
     // treat both noscale and limit_height as "noscale" for container behavior (scrolling + shadows)
-    const containerClass = `container ${align}${(scaling === "noscale" || scaling === "limit_height") ? " noscale" : ""}`;
+    const containerClass = `container ${align}${(scalingMode === "noscale" || scalingMode === "limit_height") ? " noscale" : ""}`;
 
-    // compute height (default 250)
-    const heightVal = (scaling === "limit_height") ? (Number(this.config.height) || 250) : null;
-    const limitStyle = scaling === "limit_height" ? `--limit-height: ${heightVal}px;` : "";
+    // compute height (default 250) when using limit_height
+    const heightVal = (scalingMode === "limit_height") ? (Number(scalingCfg.height || 250) || 250) : null;
+    const limitStyle = scalingMode === "limit_height" ? `--limit-height: ${heightVal}px;` : "";
 
-    if (scaling === "noscale" || scaling === "limit_height") {
+    if (scalingMode === "noscale" || scalingMode === "limit_height") {
       if (align === "center") {
         return html`
           <div class="center-align">
@@ -335,8 +349,7 @@ class ComicCard extends LitElement {
     const image = Object.keys(hass.states).find(eid => eid.startsWith("image."));
     return {
       entity: image || "",
-      scaling: "limit_height",
-      height: 250,
+      scaling: { mode: "limit_height", height: 250 },
       align: "left"
     };
   }
@@ -348,7 +361,11 @@ class ComicCardEditor extends LitElement {
   static get properties() { return { hass: {}, config: {} }; }
 
   setConfig(config) {
-    this.config = { ...config };
+    // Ensure scaling is nested object in editor state as well
+    const scalingCfg = (config.scaling && typeof config.scaling === "object")
+      ? { mode: config.scaling.mode || "limit_height", height: config.scaling.height !== undefined ? Number(config.scaling.height) : 250 }
+      : { mode: "limit_height", height: 250 };
+    this.config = { ...config, scaling: scalingCfg };
   }
 
   set hass(hass) {
@@ -360,16 +377,33 @@ class ComicCardEditor extends LitElement {
   }
 
   _onFormValueChanged(e) {
-    const next = { ...this.config, ...e.detail.value };
-    this.config = next;
-    this.dispatchEvent(new CustomEvent("config-changed", { detail: { config: next } }));
+    const value = e.detail.value || {};
+    // Merge form values then ensure scaling becomes nested object { mode, height }
+    const merged = { ...this.config, ...value };
+
+    const selectedMode = value.scaling !== undefined
+      ? value.scaling
+      : (this.config.scaling && this.config.scaling.mode) || "limit_height";
+
+    const selectedHeight = value.height !== undefined
+      ? value.height
+      : (this.config.scaling && this.config.scaling.height);
+
+    merged.scaling = { mode: selectedMode };
+    if (selectedHeight !== undefined) merged.scaling.height = Number(selectedHeight);
+
+    // store only nested height (remove flat height)
+    delete merged.height;
+
+    this.config = merged;
+    this.dispatchEvent(new CustomEvent("config-changed", { detail: { config: merged } }));
   }
 
   render() {
     if (!this.config || !this.hass) return html``;
 
     // Build schema dynamically so Height is only present when 'limit_height' is selected.
-    const scalingVal = this.config.scaling || "limit_height";
+    const scalingVal = (this.config.scaling && this.config.scaling.mode) || "limit_height";
     const schema = [
       { name: "entity", required: true, selector: { entity: { domain: ["image"] } } },
       {
@@ -402,11 +436,18 @@ class ComicCardEditor extends LitElement {
       }
     });
 
+    // Form data: provide scaling.mode as simple select value and height separately
+    const formData = {
+      ...this.config,
+      scaling: scalingVal,
+      height: (this.config.scaling && this.config.scaling.height)
+    };
+
     return html`
       <ha-form
         .hass=${this.hass}
         .schema=${schema}
-        .data=${this.config}
+        .data=${formData}
         @value-changed=${this._onFormValueChanged}
       ></ha-form>
     `;
