@@ -212,6 +212,9 @@ class ComicCard extends LitElement {
         height: auto;
         display: block;
       }
+      label {
+        text-transform: capitalize;
+      }
 
       /* === Utility: Comments for clarity, no functional changes === */
     `;
