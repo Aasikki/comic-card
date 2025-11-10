@@ -18,9 +18,6 @@ Includes a gui card editor, but you can use yaml if you prefer.
 ### Full example
     type: custom:comic-card
     entity: image.daily_fingerpori
-    grid_options:
-      columns: full
-      rows: auto
     scaling:
       mode: limit_height
       height: 250
