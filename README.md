@@ -2,6 +2,26 @@
 # Comic Card For Home Assistant
 
 A Home Assistant card for displaying comics from image entities.
+Includes a gui card editor, but you can use yaml if you prefer.
 
-![image](https://github.com/user-attachments/assets/d82414cd-b84a-4200-87fd-342437bdb2e4)
-![image](https://github.com/user-attachments/assets/10e81b46-f0ab-4b6a-80cf-0bd44bd03696)
+<img width="800" alt="kuva" src="https://github.com/user-attachments/assets/f7f55aab-6c41-4386-962f-13bf8824a13e" />
+
+# YAML Syntax
+| Name | Type | Requirement | Description | Default |
+| ---- | ---- | ----------- | ----------- | ------- |
+| `type` | string  | **Required** | `custom:comic-card` | |
+| `entity` | string  | **Required** | Image entity to be displayed in the card | |
+| ``scaling → mode`` | string  | Optional | Sets the caling mode of the comic to `limit_height`, `fit` or `noscale` | `limit_height` |
+| ``scaling → height`` | string  | Optional | Sets the height (in px) of the comic when using the "limit_height" scaling mode. | `250` |
+| `alignment` | string | Optional | Sets the alignment of the comic to eather `left` or `center` | left |
+
+### Full example
+    type: custom:comic-card
+    entity: image.daily_fingerpori
+    grid_options:
+      columns: full
+      rows: auto
+    scaling:
+      mode: limit_height
+      height: 250
+    alignment: left
