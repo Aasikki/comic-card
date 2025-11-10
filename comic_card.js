@@ -16,58 +16,7 @@ class ComicCard extends LitElement {
         align-items: center;
         overflow: hidden;
         gap: 8px;
-      }
-      .content:hover ha-icon-next {
-        transform: translateX(calc(4px * var(--scale-direction)));
-      }
-      .container .content {
-        flex: 1 0 fill;
-        min-width: 100px;
-      }
-      .container .content:not(:has(p)) {
-        min-width: fit-content;
-      }
-      .container .badges {
-        flex: 0 0;
-      }
-      .content {
-        display: flex;
-        flex-direction: row;
-        align-items: center;
-        gap: 8px;
-        color: var(--ha-heading-card-title-color, var(--primary-text-color));
-        font-size: var(--ha-heading-card-title-font-size, var(--ha-font-size-l));
-        font-weight: var(--ha-heading-card-title-font-weight, var(--ha-font-weight-normal));
-        line-height: var(--ha-heading-card-title-line-height, var(--ha-line-height-normal));
-        letter-spacing: 0.1px;
-        --mdc-icon-size: 18px;
-      }
-      .content ha-icon,
-      .content ha-icon-next {
-        display: flex;
-        flex: none;
-      }
-      .content p {
-        margin: 0;
-        font-style: normal;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        flex-shrink: 1;
-        min-width: 0;
-      }
-      .content.subtitle {
-        color: var(--ha-heading-card-subtitle-color, var(--secondary-text-color));
-        font-size: var(--ha-heading-card-subtitle-font-size, var(--ha-font-size-m));
-        font-weight: var(--ha-heading-card-subtitle-font-weight, var(--ha-font-weight-medium));
-        line-height: var(--ha-heading-card-subtitle-line-height, var(--ha-line-height-condensed));
-      }
-      .badges {
-        display: flex;
-        flex-direction: row;
-        align-items: center;
-        justify-content: flex-end;
-        gap: 4px 10px;
+        width: 100%;
       }
 
       /* === Host & Variables === */
@@ -81,9 +30,6 @@ class ComicCard extends LitElement {
         display: flex;
         flex-direction: column;
         align-items: center;
-        width: 100%;
-      }
-      .container {
         width: 100%;
       }
       .container.center { text-align: center; }
@@ -267,69 +213,6 @@ class ComicCard extends LitElement {
         display: block;
       }
 
-      /* Simple editor label styles */
-      .editor-row {
-        display: flex;
-        flex-direction: column;
-        gap: 6px;
-        margin: 6px 0;
-      }
-      .editor-row label {
-        font-size: 12px;
-        color: var(--secondary-text-color);
-      }
-      .editor-row .controls {
-        display: flex;
-        gap: 8px;
-        align-items: center;
-      }
-
-      /* Editor: grid layout to match HA look; labels left, controls right */
-      .editor-grid {
-        display: grid;
-        grid-template-columns: 110px 1fr;
-        column-gap: 20px;
-        row-gap: 14px;
-        align-items: center;
-        margin: 14px 0;
-      }
-      .editor-grid label {
-        justify-self: end;
-        font-size: 13px;
-        color: var(--secondary-text-color);
-      }
-      .editor-grid .controls {
-        display: flex;
-        gap: 14px;
-        align-items: center;
-        width: 100%;
-      }
-
-      /* scaling + height inline */
-      .scaling-controls {
-        display: flex;
-        gap: 12px;
-        align-items: center;
-        width: 100%;
-      }
-      .scaling-controls select {
-        min-width: 170px;
-        flex: 1 1 auto;
-      }
-      .scaling-controls .height-input {
-        width: 120px;
-        flex: 0 0 120px;
-      }
-
-      /* make entity picker / selects expand nicely */
-      .editor-grid ha-entity-picker,
-      .editor-grid select,
-      .editor-grid mwc-textfield {
-        width: 100%;
-      }
-      /* disabled appearance */
-      mwc-textfield[disabled] { opacity: 0.6; }
-
       /* === Utility: Comments for clarity, no functional changes === */
     `;
   }
@@ -367,7 +250,6 @@ class ComicCard extends LitElement {
     // allow three fit modes: "fit", "noscale" and new "limit"
     const fit = (this.config.fit === "fit" || this.config.fit === "limit") ? this.config.fit : "noscale";
     const align = this.config.align === "center" ? "center" : "left";
-    const wrapperClass = `comic-block ${fit} ${align}`;
     // treat both noscale and limit as "noscale" for container behavior (scrolling + shadows)
     const containerClass = `container ${align}${(fit === "noscale" || fit === "limit") ? " noscale" : ""}`;
 
