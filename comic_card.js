@@ -312,11 +312,22 @@ class ComicCard extends LitElement {
     const src = stateObj?.attributes?.entity_picture || "";
     const alt = stateObj?.attributes?.friendly_name || this.config.entity;
 
+    // Detect if we're in preview mode (card picker)
+    const isPreview = this.closest('hui-card-preview') !== null || 
+                     this.closest('[preview]') !== null ||
+                     this.hasAttribute('preview') ||
+                     (this.parentElement && (
+                       this.parentElement.classList.contains('preview') ||
+                       this.parentElement.closest('.preview') !== null
+                     ));
+
     // scaling is a nested object { mode, height }
     const scalingCfg = (this.config.scaling && typeof this.config.scaling === "object")
       ? this.config.scaling
       : { mode: "noscale" };
-    const scalingMode = scalingCfg.mode || "noscale";
+    
+    // Override scaling mode for preview to always use "fit"
+    const scalingMode = isPreview ? "fit" : (scalingCfg.mode || "noscale");
 
     const alignment = this.config.alignment === "center" ? "center" : "left";
     // map scaling to CSS class: use 'limit' class for 'limit_height' to keep existing styles
