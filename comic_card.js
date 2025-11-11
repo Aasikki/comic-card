@@ -541,7 +541,7 @@ const registerComicCard = () => {
     type: "comic-card",
     name: "Comic Card",
     preview: false,
-    description: "Display comics from image entities like daily_fingerpori, xkcd, garfield, etc.",
+    description: "Display comics from image entities.",
   });
 
   // Function to check for comic entities and update preview setting
