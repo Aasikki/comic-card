@@ -402,10 +402,37 @@ class ComicCard extends LitElement {
   // (previously returned a custom editor which prevented the built-in form editor
   // from being shown)
 
+  // Helper method to find comic-related image entities
+  static findComicEntities(hass) {
+    return Object.keys(hass.states).filter(eid => 
+      eid.startsWith("image.") && (
+        // Known comic integrations
+        eid === "image.daily_fingerpori" ||
+        // Generic comic-related names
+        eid.includes("comic") || 
+        eid.includes("strip") || 
+        eid.includes("webcomic") ||
+        eid.includes("daily_comic") ||
+        eid.includes("garfield") ||
+        eid.includes("xkcd") ||
+        eid.includes("dilbert") ||
+        eid.includes("calvin_and_hobbes") ||
+        eid.includes("peanuts") ||
+        eid.includes("web_comic")
+      )
+    );
+  }
+
   static getStubConfig(hass) {
-    const image = Object.keys(hass.states).find(eid => eid.startsWith("image."));
+    const comicEntities = ComicCard.findComicEntities(hass);
+    // Prefer daily_fingerpori if it exists, otherwise use the first comic entity found
+    const preferredEntity = hass.states["image.daily_fingerpori"] ? "image.daily_fingerpori" : comicEntities[0];
+    
+    // If no comic entities are found, fall back to any image entity
+    const fallbackEntity = preferredEntity || Object.keys(hass.states).find(eid => eid.startsWith("image."));
+    
     return {
-      entity: image || "",
+      entity: fallbackEntity || "",
       scaling: { mode: "limit_height", height: 250 },
       alignment: "left"
     };
@@ -505,8 +532,60 @@ class ComicCard extends LitElement {
 customElements.define("comic-card", ComicCard);
 
 window.customCards = window.customCards || [];
-window.customCards.push({
-  type: "comic-card",
-  name: "Comic Card",
-  description: "Display comics from image entities",
-});
+
+// Function to register the card with appropriate preview setting
+const registerComicCard = () => {
+  // Initially register without preview
+  window.customCards.push({
+    type: "comic-card",
+    name: "Comic Card",
+    preview: false,
+    description: "Display comics from image entities.",
+  });
+
+  // Function to check for comic entities and update preview setting
+  const updatePreviewSetting = () => {
+    let hass = null;
+    
+    // Try different methods to access Home Assistant
+    if (window.hass && window.hass.states) {
+      hass = window.hass;
+    } else if (window.hassConnection?.conn?._hass?.states) {
+      hass = window.hassConnection.conn._hass;
+    } else {
+      const homeAssistant = document.querySelector('home-assistant');
+      if (homeAssistant && homeAssistant.hass && homeAssistant.hass.states) {
+        hass = homeAssistant.hass;
+      }
+    }
+
+    if (hass && hass.states) {
+      const comicEntities = ComicCard.findComicEntities(hass);
+      const hasComicEntities = comicEntities.length > 0;
+      
+      // Update the card registration with appropriate preview setting
+      const cardIndex = window.customCards.findIndex(card => card.type === "comic-card");
+      if (cardIndex !== -1) {
+        window.customCards[cardIndex].preview = hasComicEntities;
+      }
+      
+      return true; // Successfully updated
+    }
+    return false; // Hass not available yet
+  };
+
+  // Try to update immediately
+  if (!updatePreviewSetting()) {
+    // If not successful, retry periodically
+    let attempts = 0;
+    const maxAttempts = 10;
+    const checkInterval = setInterval(() => {
+      attempts++;
+      if (updatePreviewSetting() || attempts >= maxAttempts) {
+        clearInterval(checkInterval);
+      }
+    }, 1000);
+  }
+};
+
+registerComicCard();
