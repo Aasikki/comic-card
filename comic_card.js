@@ -508,5 +508,6 @@ window.customCards = window.customCards || [];
 window.customCards.push({
   type: "comic-card",
   name: "Comic Card",
+  preview: true,
   description: "Display comics from image entities",
 });
