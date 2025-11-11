@@ -309,19 +309,8 @@ class ComicCard extends LitElement {
   render() {
     if (!this.hass || !this.config) return html``;
     const stateObj = this.hass.states[this.config.entity];
-    
-    // Use a placeholder comic image for preview mode or when no entity_picture is available
-    const previewImage = "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMzAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iI2Y0ZjRmNCIgc3Ryb2tlPSIjY2NjIiBzdHJva2Utd2lkdGg9IjIiLz48dGV4dCB4PSIxNTAiIHk9IjgwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC1zaXplPSIxOCIgZmlsbD0iIzMzMyI+Q29taWMgQ2FyZDwvdGV4dD48dGV4dCB4PSIxNTAiIHk9IjExMCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1mYW1pbHk9InNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IiM2NjYiPlByZXZpZXc8L3RleHQ+PHBhdGggZD0iTTUwIDEzMEw3MCAzMjBMMTQwIDMwMEwxMjAgMTMwWiIgZmlsbD0iIzY2YiIgc3Ryb2tlPSIjNDQ0IiBzdHJva2Utd2lkdGg9IjEiLz48Y2lyY2xlIGN4PSI4NSIgY3k9IjE1NSIgcj0iOCIgZmlsbD0iI2Y5ZiI+PC9jaXJjbGU+PC9zdmc+";
-    
-    // Determine if this is likely a comic entity or if we should show preview
-    const isComicEntity = this.config.entity && ComicCard.findComicEntities(this.hass).includes(this.config.entity);
-    const hasEntityPicture = stateObj?.attributes?.entity_picture;
-    
-    // Show preview image if: no entity configured, entity is not comic-related, or no entity_picture available
-    const shouldShowPreview = !this.config.entity || !isComicEntity || !hasEntityPicture;
-    
-    const src = shouldShowPreview ? previewImage : stateObj.attributes.entity_picture;
-    const alt = shouldShowPreview ? "Comic Card Preview" : (stateObj?.attributes?.friendly_name || this.config.entity);
+    const src = stateObj?.attributes?.entity_picture || "";
+    const alt = stateObj?.attributes?.friendly_name || this.config.entity;
 
     // scaling is a nested object { mode, height }
     const scalingCfg = (this.config.scaling && typeof this.config.scaling === "object")
@@ -440,8 +429,11 @@ class ComicCard extends LitElement {
     // Prefer daily_fingerpori if it exists, otherwise use the first comic entity found
     const preferredEntity = hass.states["image.daily_fingerpori"] ? "image.daily_fingerpori" : comicEntities[0];
     
+    // If no comic entities are found, fall back to any image entity
+    const fallbackEntity = preferredEntity || Object.keys(hass.states).find(eid => eid.startsWith("image."));
+    
     return {
-      entity: preferredEntity || "",
+      entity: fallbackEntity || "",
       scaling: { mode: "limit_height", height: 250 },
       alignment: "left"
     };
