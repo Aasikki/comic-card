@@ -533,37 +533,70 @@ class ComicCard extends LitElement {
 customElements.define("comic-card", ComicCard);
 
 window.customCards = window.customCards || [];
-window.customCards.push({
-  type: "comic-card",
-  name: "Comic Card",
-  preview: false, // Will be updated dynamically when card picker is opened
-  description: "Display comics from image entities like daily_fingerpori, xkcd, garfield, etc.",
-});
 
-// Update preview setting dynamically when Home Assistant is available
-const updatePreviewSetting = () => {
-  if (typeof window.hassConnection !== 'undefined' && 
-      window.hassConnection.conn && 
-      window.hassConnection.conn._hass &&
-      window.hassConnection.conn._hass.states) {
+// Simple approach: register without preview initially, then check for comics and re-register if needed
+const registerComicCard = () => {
+  // First, register without preview
+  window.customCards.push({
+    type: "comic-card",
+    name: "Comic Card",
+    preview: false,
+    description: "Display comics from image entities like daily_fingerpori, xkcd, garfield, etc.",
+  });
+
+  // Function to check for comics and update registration
+  const checkForComics = () => {
+    // Try to find Home Assistant object in various ways
+    let hass = null;
     
-    const hass = window.hassConnection.conn._hass;
-    const comicEntities = ComicCard.findComicEntities(hass);
-    const hasComicEntities = comicEntities.length > 0;
-    
-    // Find and update the card registration
-    const cardIndex = window.customCards.findIndex(card => card.type === "comic-card");
-    if (cardIndex !== -1) {
-      window.customCards[cardIndex].preview = hasComicEntities;
+    // Method 1: Direct window access
+    if (window.hass && window.hass.states) {
+      hass = window.hass;
     }
+    // Method 2: Connection object
+    else if (window.hassConnection?.conn?._hass?.states) {
+      hass = window.hassConnection.conn._hass;
+    }
+    // Method 3: Look for hass in document elements
+    else {
+      const homeAssistant = document.querySelector('home-assistant');
+      if (homeAssistant && homeAssistant.hass && homeAssistant.hass.states) {
+        hass = homeAssistant.hass;
+      }
+    }
+
+    if (hass && hass.states) {
+      const comicEntities = ComicCard.findComicEntities(hass);
+      if (comicEntities.length > 0) {
+        // Remove the old registration and add a new one with preview enabled
+        const cardIndex = window.customCards.findIndex(card => card.type === "comic-card");
+        if (cardIndex !== -1) {
+          window.customCards.splice(cardIndex, 1);
+        }
+        window.customCards.push({
+          type: "comic-card",
+          name: "Comic Card",
+          preview: true,
+          description: "Display comics from image entities like daily_fingerpori, xkcd, garfield, etc.",
+        });
+        return true; // Found comics, stop checking
+      }
+    }
+    return false; // No comics found or hass not available yet
+  };
+
+  // Try checking immediately
+  if (!checkForComics()) {
+    // If not found immediately, try a few more times with delays
+    let attempts = 0;
+    const maxAttempts = 10;
+    const checkInterval = setInterval(() => {
+      attempts++;
+      if (checkForComics() || attempts >= maxAttempts) {
+        clearInterval(checkInterval);
+      }
+    }, 1000);
   }
 };
 
-// Try to update preview setting when document is ready
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', () => {
-    setTimeout(updatePreviewSetting, 2000);
-  });
-} else {
-  setTimeout(updatePreviewSetting, 2000);
-}
+registerComicCard();
