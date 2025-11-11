@@ -1,5 +1,30 @@
 import { LitElement, html, css } from "https://unpkg.com/lit-element/lit-element.js?module";
 
+const TRANSLATIONS = {
+  en: {
+    entity: "Image entity",
+    mode: "Scaling",
+    limit_height: "Limit height",
+    fit: "Fit",
+    noscale: "No scale",
+    height: "Height (px)",
+    alignment: "Alignment",
+    left: "Left",
+    center: "Center"
+  },
+  fi: {
+    entity: "Kuvaentiteetti",
+    mode: "Skaalaus",
+    limit_height: "Rajoita korkeus",
+    fit: "Sovita",
+    noscale: "Ei skaalausta",
+    height: "Korkeus (px)",
+    alignment: "Tasaus",
+    left: "Vasen",
+    center: "Keskitetty"
+  }
+};
+
 class ComicCard extends LitElement {
   static get properties() {
     return { hass: {}, config: {} };
@@ -388,6 +413,20 @@ class ComicCard extends LitElement {
 
   // Add Home Assistant built-in form editor support (nested `scaling` object instead of dotted keys)
   static getConfigForm() {
+    // Determine language: use only the page / Home Assistant language (<html lang="">).
+    // Fall back to English if not present.
+    const lang = (typeof document !== "undefined" && document.documentElement?.lang)
+      ? document.documentElement.lang.split("-")[0]
+      : "en";
+    const dict = TRANSLATIONS[lang] || TRANSLATIONS.en;
+
+    // small helper to get translation for option labels or fall back to English
+    const t = (keyOrDefault) => {
+      // if key exists in dict return it, otherwise if passed a string not a key return it
+      if (typeof keyOrDefault === "string" && dict[keyOrDefault]) return dict[keyOrDefault];
+      return keyOrDefault;
+    };
+
     return {
       schema: [
         // Restrict entity picker to image entities only
@@ -401,9 +440,9 @@ class ComicCard extends LitElement {
               selector: {
                 select: {
                   options: [
-                    { value: "limit_height", label: "Limit height" },
-                    { value: "fit", label: "Fit" },
-                    { value: "noscale", label: "No scale" }
+                    { value: "limit_height", label: t("limit_height") },
+                    { value: "fit", label: t("fit") },
+                    { value: "noscale", label: t("noscale") }
                   ]
                 }
               }
@@ -423,8 +462,8 @@ class ComicCard extends LitElement {
               selector: {
                 select: {
                   options: [
-                    { value: "left", label: "Left" },
-                    { value: "center", label: "Center" }
+                    { value: "left", label: t("left") },
+                    { value: "center", label: t("center") }
                   ]
                 }
               }
@@ -435,13 +474,13 @@ class ComicCard extends LitElement {
       computeLabel: (schema) => {
         switch (schema.name) {
           case "entity":
-            return "Image entity";
+            return dict.entity;
           case "mode":
-            return "Scaling mode";
+            return dict.mode;
           case "height":
-            return "Height (px)";
+            return dict.height;
           case "alignment":
-            return "Alignment";
+            return dict.alignment;
         }
         return undefined;
       },
