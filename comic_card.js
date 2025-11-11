@@ -443,13 +443,13 @@ class ComicCard extends LitElement {
     // If no comic entities are found, fall back to any image entity
     const fallbackEntity = preferredEntity || Object.keys(hass.states).find(eid => eid.startsWith("image."));
     
-    // For testing: let's try always using "fit" mode to see if it works in preview
-    // We can make this smarter later once we confirm preview detection works
+    // Use "limit_height" as default since it's more sensible for dashboard layouts
+    // This will also be used for the preview, which is acceptable
     return {
       entity: fallbackEntity || "",
       scaling: { 
-        mode: "fit", // Temporarily always use fit to test preview
-        height: 250 
+        mode: "limit_height", 
+        height: 250
       },
       alignment: "left"
     };
