@@ -413,9 +413,10 @@ class ComicCard extends LitElement {
 
   // Add Home Assistant built-in form editor support (nested `scaling` object instead of dotted keys)
   static getConfigForm() {
-    // Determine language (use primary subtag, e.g. "fi" from "fi-FI")
-    const lang = (typeof navigator !== "undefined" && navigator.language)
-      ? navigator.language.split("-")[0]
+    // Determine language: use only the page / Home Assistant language (<html lang="">).
+    // Fall back to English if not present.
+    const lang = (typeof document !== "undefined" && document.documentElement?.lang)
+      ? document.documentElement.lang.split("-")[0]
       : "en";
     const dict = TRANSLATIONS[lang] || TRANSLATIONS.en;
 
