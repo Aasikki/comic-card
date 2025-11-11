@@ -415,7 +415,6 @@ class ComicCard extends LitElement {
         eid.includes("daily_comic") ||
         eid.includes("garfield") ||
         eid.includes("xkcd") ||
-        eid.includes("garfield") ||
         eid.includes("dilbert") ||
         eid.includes("calvin_and_hobbes") ||
         eid.includes("peanuts") ||
