@@ -408,23 +408,23 @@ class ComicCard extends LitElement {
       eid.startsWith("image.") && (
         // Known comic integrations
         eid === "image.daily_fingerpori" ||
-        eid === "image.xkcd" ||
-        eid === "image.garfield" ||
-        eid === "image.dilbert" ||
-        eid === "image.calvin_and_hobbes" ||
-        eid === "image.peanuts" ||
-        eid === "image.comic_strip" ||
         // Generic comic-related names
         eid.includes("comic") || 
         eid.includes("strip") || 
         eid.includes("webcomic") ||
         eid.includes("daily_comic") ||
+        eid.includes("garfield") ||
+        eid.includes("xkcd") ||
+        eid.includes("garfield") ||
+        eid.includes("dilbert") ||
+        eid.includes("calvin_and_hobbes") ||
+        eid.includes("peanuts") ||
         eid.includes("web_comic")
       )
     );
   }
 
-  static getStubConfig(hass) {
+  static getStubConfig(hass, options = {}) {
     const comicEntities = ComicCard.findComicEntities(hass);
     // Prefer daily_fingerpori if it exists, otherwise use the first comic entity found
     const preferredEntity = hass.states["image.daily_fingerpori"] ? "image.daily_fingerpori" : comicEntities[0];
@@ -432,9 +432,15 @@ class ComicCard extends LitElement {
     // If no comic entities are found, fall back to any image entity
     const fallbackEntity = preferredEntity || Object.keys(hass.states).find(eid => eid.startsWith("image."));
     
+    // Detect if this is for preview mode by checking the call stack or using a hint
+    const isPreview = options.preview || (new Error().stack && new Error().stack.includes('preview')) || false;
+    
     return {
       entity: fallbackEntity || "",
-      scaling: { mode: "limit_height", height: 250 },
+      scaling: { 
+        mode: isPreview ? "fit" : "limit_height", 
+        height: 250 
+      },
       alignment: "left"
     };
   }
@@ -577,7 +583,7 @@ const registerComicCard = () => {
           type: "comic-card",
           name: "Comic Card",
           preview: true,
-          description: "Display comics from image entities like daily_fingerpori, xkcd, garfield, etc.",
+          description: "Display comics from image entities",
         });
         return true; // Found comics, stop checking
       }
