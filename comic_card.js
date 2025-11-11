@@ -536,6 +536,34 @@ window.customCards = window.customCards || [];
 window.customCards.push({
   type: "comic-card",
   name: "Comic Card",
-  preview: true, // We'll handle showing appropriate content in render()
+  preview: false, // Will be updated dynamically when card picker is opened
   description: "Display comics from image entities like daily_fingerpori, xkcd, garfield, etc.",
 });
+
+// Update preview setting dynamically when Home Assistant is available
+const updatePreviewSetting = () => {
+  if (typeof window.hassConnection !== 'undefined' && 
+      window.hassConnection.conn && 
+      window.hassConnection.conn._hass &&
+      window.hassConnection.conn._hass.states) {
+    
+    const hass = window.hassConnection.conn._hass;
+    const comicEntities = ComicCard.findComicEntities(hass);
+    const hasComicEntities = comicEntities.length > 0;
+    
+    // Find and update the card registration
+    const cardIndex = window.customCards.findIndex(card => card.type === "comic-card");
+    if (cardIndex !== -1) {
+      window.customCards[cardIndex].preview = hasComicEntities;
+    }
+  }
+};
+
+// Try to update preview setting when document is ready
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => {
+    setTimeout(updatePreviewSetting, 2000);
+  });
+} else {
+  setTimeout(updatePreviewSetting, 2000);
+}
