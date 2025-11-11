@@ -13,7 +13,7 @@ Includes a gui card editor, but you can use yaml if you prefer.
 | `entity` | string  | **Required** | Image entity to be displayed in the card | |
 | ``scaling → mode`` | string  | Optional | Sets the scaling mode of the comic to `limit_height`, `fit` or `noscale` | `limit_height` |
 | ``scaling → height`` | string  | Optional | Sets the height (in px) of the comic when using the "limit_height" scaling mode. | `250` |
-| `alignment` | string | Optional | Sets the alignment of the comic to eather `left` or `center` | left |
+| `alignment` | string | Optional | Sets the alignment of the comic to eather `left` or `center` | `left` |
 
 ### Full example
     type: custom:comic-card
