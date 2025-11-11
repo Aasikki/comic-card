@@ -312,22 +312,11 @@ class ComicCard extends LitElement {
     const src = stateObj?.attributes?.entity_picture || "";
     const alt = stateObj?.attributes?.friendly_name || this.config.entity;
 
-    // Detect if we're in preview mode (card picker)
-    const isPreview = this.closest('hui-card-preview') !== null || 
-                     this.closest('[preview]') !== null ||
-                     this.hasAttribute('preview') ||
-                     (this.parentElement && (
-                       this.parentElement.classList.contains('preview') ||
-                       this.parentElement.closest('.preview') !== null
-                     ));
-
     // scaling is a nested object { mode, height }
     const scalingCfg = (this.config.scaling && typeof this.config.scaling === "object")
       ? this.config.scaling
       : { mode: "noscale" };
-    
-    // Override scaling mode for preview to always use "fit"
-    const scalingMode = isPreview ? "fit" : (scalingCfg.mode || "noscale");
+    const scalingMode = scalingCfg.mode || "noscale";
 
     const alignment = this.config.alignment === "center" ? "center" : "left";
     // map scaling to CSS class: use 'limit' class for 'limit_height' to keep existing styles
@@ -435,7 +424,7 @@ class ComicCard extends LitElement {
     );
   }
 
-  static getStubConfig(hass, options = {}) {
+  static getStubConfig(hass) {
     const comicEntities = ComicCard.findComicEntities(hass);
     // Prefer daily_fingerpori if it exists, otherwise use the first comic entity found
     const preferredEntity = hass.states["image.daily_fingerpori"] ? "image.daily_fingerpori" : comicEntities[0];
@@ -443,14 +432,9 @@ class ComicCard extends LitElement {
     // If no comic entities are found, fall back to any image entity
     const fallbackEntity = preferredEntity || Object.keys(hass.states).find(eid => eid.startsWith("image."));
     
-    // Use "limit_height" as default since it's more sensible for dashboard layouts
-    // This will also be used for the preview, which is acceptable
     return {
       entity: fallbackEntity || "",
-      scaling: { 
-        mode: "limit_height", 
-        height: 250
-      },
+      scaling: { mode: "limit_height", height: 250 },
       alignment: "left"
     };
   }
@@ -550,9 +534,9 @@ customElements.define("comic-card", ComicCard);
 
 window.customCards = window.customCards || [];
 
-// Simple approach: register without preview initially, then check for comics and re-register if needed
+// Function to register the card with appropriate preview setting
 const registerComicCard = () => {
-  // First, register without preview
+  // Initially register without preview
   window.customCards.push({
     type: "comic-card",
     name: "Comic Card",
@@ -560,21 +544,16 @@ const registerComicCard = () => {
     description: "Display comics from image entities like daily_fingerpori, xkcd, garfield, etc.",
   });
 
-  // Function to check for comics and update registration
-  const checkForComics = () => {
-    // Try to find Home Assistant object in various ways
+  // Function to check for comic entities and update preview setting
+  const updatePreviewSetting = () => {
     let hass = null;
     
-    // Method 1: Direct window access
+    // Try different methods to access Home Assistant
     if (window.hass && window.hass.states) {
       hass = window.hass;
-    }
-    // Method 2: Connection object
-    else if (window.hassConnection?.conn?._hass?.states) {
+    } else if (window.hassConnection?.conn?._hass?.states) {
       hass = window.hassConnection.conn._hass;
-    }
-    // Method 3: Look for hass in document elements
-    else {
+    } else {
       const homeAssistant = document.querySelector('home-assistant');
       if (homeAssistant && homeAssistant.hass && homeAssistant.hass.states) {
         hass = homeAssistant.hass;
@@ -583,32 +562,27 @@ const registerComicCard = () => {
 
     if (hass && hass.states) {
       const comicEntities = ComicCard.findComicEntities(hass);
-      if (comicEntities.length > 0) {
-        // Remove the old registration and add a new one with preview enabled
-        const cardIndex = window.customCards.findIndex(card => card.type === "comic-card");
-        if (cardIndex !== -1) {
-          window.customCards.splice(cardIndex, 1);
-        }
-        window.customCards.push({
-          type: "comic-card",
-          name: "Comic Card",
-          preview: true,
-          description: "Display comics from image entities",
-        });
-        return true; // Found comics, stop checking
+      const hasComicEntities = comicEntities.length > 0;
+      
+      // Update the card registration with appropriate preview setting
+      const cardIndex = window.customCards.findIndex(card => card.type === "comic-card");
+      if (cardIndex !== -1) {
+        window.customCards[cardIndex].preview = hasComicEntities;
       }
+      
+      return true; // Successfully updated
     }
-    return false; // No comics found or hass not available yet
+    return false; // Hass not available yet
   };
 
-  // Try checking immediately
-  if (!checkForComics()) {
-    // If not found immediately, try a few more times with delays
+  // Try to update immediately
+  if (!updatePreviewSetting()) {
+    // If not successful, retry periodically
     let attempts = 0;
     const maxAttempts = 10;
     const checkInterval = setInterval(() => {
       attempts++;
-      if (checkForComics() || attempts >= maxAttempts) {
+      if (updatePreviewSetting() || attempts >= maxAttempts) {
         clearInterval(checkInterval);
       }
     }, 1000);
